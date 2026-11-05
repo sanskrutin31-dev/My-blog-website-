@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - MyBlog</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>
+        <h2>MyBlog</h2>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="create-blog.html">Create Blog</a>
+            <a href="login.html">Logout</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>My Dashboard</h1>
+        <p>Welcome! Manage your blogs here.</p>
+        <a href="create-blog.html">
+            <button>Create New Blog</button>
+        </a>
+    </section>
+
+    <section class="blogs">
+        <h2>My Published Blogs</h2>
+        <div id="blogList"></div>
+    </section>
+
+    <script>
+        const blogs = JSON.parse(localStorage.getItem("blogs")) || [];
+        const blogList = document.getElementById("blogList");
+
+        if (blogs.length === 0) {
+            blogList.innerHTML = "<p>No blogs published yet.</p>";
+        } else {
+            blogs.forEach(function(blog) {
+                const card = document.createElement("div");
+                card.className = "blog-card";
+
+                const title = document.createElement("h3");
+                title.textContent = blog.title;
+
+                const content = document.createElement("p");
+                content.textContent = blog.content;
+
+                card.appendChild(title);
+                card.appendChild(content);
+                blogList.appendChild(card);
+            });
+        }
+    </script>
+
+</body>
+</html>
