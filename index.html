@@ -1,0 +1,86 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyBlog - Home</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<header>
+    <h2>MyBlog</h2>
+
+    <nav>
+        <a href="index.html">Home</a>
+
+        <a href="login.html" id="loginLink">Login</a>
+
+        <a href="register.html" id="registerLink">Register</a>
+
+        <button id="logoutBtn" style="display:none;">
+            Logout
+        </button>
+    </nav>
+</header>
+
+<section class="hero">
+
+    <h1>Welcome to MyBlog</h1>
+
+    <p>
+        Share your thoughts, ideas and stories
+        with the world.
+    </p>
+
+    <a href="login.html" id="getStartedLink">
+        <button>Get Started</button>
+    </a>
+
+</section>
+
+<footer>
+    <p>© 2026 MyBlog. All Rights Reserved.</p>
+</footer>
+
+<script>
+
+const loggedInUser = localStorage.getItem("loggedInUser");
+
+const loginLink = document.getElementById("loginLink");
+const registerLink = document.getElementById("registerLink");
+const logoutBtn = document.getElementById("logoutBtn");
+const getStartedLink = document.getElementById("getStartedLink");
+
+if (loggedInUser) {
+
+    loginLink.style.display = "none";
+    registerLink.style.display = "none";
+    logoutBtn.style.display = "inline-block";
+
+    const user = JSON.parse(loggedInUser);
+
+    document.querySelector(".hero h1").textContent =
+        "Welcome " + user.name;
+
+    getStartedLink.style.display = "none";
+
+}
+
+logoutBtn.addEventListener("click", function() {
+
+    localStorage.removeItem("loggedInUser");
+
+    alert("Logout Successful!");
+
+    window.location.href = "index.html";
+
+});
+
+</script>
+
+</body>
+</html>
