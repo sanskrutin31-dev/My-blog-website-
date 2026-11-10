@@ -31,12 +31,18 @@
     <h2>My Published Blogs</h2>
     <div id="blogList"></div>
 </section>
+
 <script>
 const blogList = document.getElementById("blogList");
 
 async function loadBlogs() {
     try {
         const response = await fetch("http://localhost:5000/api/blogs");
+
+        if (!response.ok) {
+            throw new Error("Failed to load blogs");
+        }
+
         const blogs = await response.json();
 
         blogList.innerHTML = "";
@@ -59,20 +65,31 @@ async function loadBlogs() {
             const content = document.createElement("p");
             content.textContent = blog.content;
 
+            const viewButton = document.createElement("button");
+            viewButton.textContent = "View Blog";
+
+            viewButton.addEventListener("click", function() {
+                window.location.href =
+                    "view-blog.html?id=" + encodeURIComponent(blog._id);
+            });
+
             card.appendChild(title);
             card.appendChild(author);
             card.appendChild(content);
+            card.appendChild(viewButton);
 
             blogList.appendChild(card);
         });
 
     } catch (error) {
-        blogList.innerHTML = "<p>Unable to load blogs. Please check server.</p>";
+        blogList.innerHTML =
+            "<p>Unable to load blogs. Please check server.</p>";
         console.error(error);
     }
 }
 
 loadBlogs();
 </script>
+
 </body>
 </html>

@@ -19,7 +19,7 @@
 
 <section class="create-section">
 
-    <h1 id="title">Blog Title</h1>
+    <h1 id="title">Loading Blog...</h1>
 
     <p id="author"></p>
 
@@ -32,35 +32,43 @@
 </section>
 
 <script>
+async function loadBlog() {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
 
-const blogs = JSON.parse(
-    localStorage.getItem("blogs")
-) || [];
+    if (!id) {
+        document.getElementById("title").textContent = "Blog Not Found";
+        return;
+    }
 
-const params = new URLSearchParams(window.location.search);
-const id = Number(params.get("id"));
+    try {
+        const response = await fetch(
+            `http://localhost:5000/api/blogs/${encodeURIComponent(id)}`
+        );
 
-if (
-    params.get("id") === null ||
-    !Number.isInteger(id) ||
-    id < 0 ||
-    id >= blogs.length
-) {
-    document.getElementById("title").textContent = "Blog Not Found";
-    document.getElementById("author").textContent = "";
-    document.getElementById("content").textContent = "";
-} else {
+        if (!response.ok) {
+            throw new Error("Blog not found");
+        }
 
-    const blog = blogs[id];
+        const blog = await response.json();
 
-    document.getElementById("title").textContent = blog.title;
-    document.getElementById("author").textContent =
-        "Written by: " + (blog.author || "Unknown");
+        document.getElementById("title").textContent = blog.title;
 
-    document.getElementById("content").textContent = blog.content;
+        document.getElementById("author").textContent =
+            "Written by: " + (blog.author || "Unknown");
 
+        document.getElementById("content").textContent = blog.content;
+
+    } catch (error) {
+        document.getElementById("title").textContent = "Blog Not Found";
+        document.getElementById("author").textContent = "";
+        document.getElementById("content").textContent = "";
+
+        console.error(error);
+    }
 }
 
+loadBlog();
 </script>
 
 </body>
