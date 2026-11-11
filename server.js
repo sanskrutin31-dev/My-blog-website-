@@ -190,6 +190,84 @@ app.get("/api/blogs/:id", async (req, res) => {
     }
 });
 
+// Update Blog API
+app.put("/api/blogs/:id", async (req, res) => {
+    try {
+        const { title, author, content } = req.body;
+        const blogId = req.params.id;
+
+        if (!mongoose.Types.ObjectId.isValid(blogId)) {
+            return res.status(400).json({
+                message: "Invalid blog ID"
+            });
+        }
+
+        if (!title || !author || !content) {
+            return res.status(400).json({
+                message: "All fields are required"
+            });
+        }
+
+        const updatedBlog = await Blog.findByIdAndUpdate(
+            blogId,
+            {
+                title: title.trim(),
+                author: author.trim(),
+                content: content.trim()
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedBlog) {
+            return res.status(404).json({
+                message: "Blog not found"
+            });
+        }
+
+        res.status(200).json({
+            message: "Blog updated successfully!",
+            blog: updatedBlog
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Blog update failed",
+            error: error.message
+        });
+    }
+});
+// Delete Blog API
+app.delete("/api/blogs/:id", async (req, res) => {
+    try {
+        const blogId = req.params.id;
+
+        if (!mongoose.Types.ObjectId.isValid(blogId)) {
+            return res.status(400).json({
+                message: "Invalid blog ID"
+            });
+        }
+
+        const deletedBlog = await Blog.findByIdAndDelete(blogId);
+
+        if (!deletedBlog) {
+            return res.status(404).json({
+                message: "Blog not found"
+            });
+        }
+
+        res.status(200).json({
+            message: "Blog deleted successfully!"
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Blog deletion failed",
+            error: error.message
+        });
+    }
+});
+
+
 // Start Server after MongoDB connection
 const PORT = process.env.PORT || 5000;
 
