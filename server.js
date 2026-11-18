@@ -1,6 +1,6 @@
 
 require("dotenv").config();
-
+const jwt = require("jsonwebtoken");
 const connectDB = require("./db");
 const User = require("./models/User");
 const Blog = require("./models/Blog");
@@ -63,7 +63,7 @@ app.post("/api/register", async (req, res) => {
     }
 });
 
-// Login API
+// Login API with JWT Authentication
 app.post("/api/login", async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -95,8 +95,19 @@ app.post("/api/login", async (req, res) => {
             });
         }
 
+        // Generate JWT Token
+        const token = jwt.sign(
+            {
+                id: user._id,
+                email: user.email
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+        );
+
         res.status(200).json({
             message: "Login successful!",
+            token: token,
             user: {
                 id: user._id,
                 name: user.name,
@@ -112,8 +123,86 @@ app.post("/api/login", async (req, res) => {
     }
 });
 
-// Create Blog API
-app.post("/api/blogs", async (req, res) => {
+// JWT Authentication Middleware
+const verifyToken = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({
+            message: "Access denied. No token provided."
+        });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET
+        );
+
+        req.user = decoded;
+        next();
+
+    } catch (error) {
+        return res.status(401).json({
+            message: "Invalid or expired token"
+        });
+    }
+};
+
+// Private Dashboard API
+app.get("/api/dashboard", verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id)
+            .select("-password");
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+
+        res.status(200).json({
+            message: "Welcome to your private dashboard!",
+            user: user
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Dashboard error",
+            error: error.message
+        });
+    }
+});
+// User Profile API
+app.get("/api/profile", verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id)
+            .select("-password");
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+
+        res.status(200).json({
+            message: "Profile fetched successfully!",
+            user: user
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Profile fetch failed",
+            error: error.message
+        });
+    }
+});
+
+
+// Create Blog API - JWT Protected
+app.post("/api/blogs", verifyToken, async (req, res) => {
     try {
         const { title, author, content } = req.body;
 
@@ -126,7 +215,8 @@ app.post("/api/blogs", async (req, res) => {
         const newBlog = new Blog({
             title: title.trim(),
             author: author.trim(),
-            content: content
+            content: content,
+            user: req.user.id
         });
 
         await newBlog.save();
@@ -144,10 +234,12 @@ app.post("/api/blogs", async (req, res) => {
     }
 });
 
-// Get All Blogs API
-app.get("/api/blogs", async (req, res) => {
+// Get Logged-in User's Blogs
+app.get("/api/blogs", verifyToken, async (req, res) => {
     try {
-        const blogs = await Blog.find().sort({
+        const blogs = await Blog.find({
+            user: req.user.id
+        }).sort({
             createdAt: -1
         });
 
@@ -155,43 +247,14 @@ app.get("/api/blogs", async (req, res) => {
 
     } catch (error) {
         res.status(500).json({
-            message: "Failed to fetch blogs",
-            error: error.message
-        });
-    }
-});
-
-// Get Single Blog API
-app.get("/api/blogs/:id", async (req, res) => {
-    try {
-        const blogId = req.params.id;
-
-        if (!mongoose.Types.ObjectId.isValid(blogId)) {
-            return res.status(400).json({
-                message: "Invalid blog ID"
-            });
-        }
-
-        const blog = await Blog.findById(blogId);
-
-        if (!blog) {
-            return res.status(404).json({
-                message: "Blog not found"
-            });
-        }
-
-        res.status(200).json(blog);
-
-    } catch (error) {
-        res.status(500).json({
-            message: "Failed to fetch blog",
+            message: "Failed to fetch user blogs",
             error: error.message
         });
     }
 });
 
 // Update Blog API
-app.put("/api/blogs/:id", async (req, res) => {
+app.put("/api/blogs/:id", verifyToken, async (req, res) => {
     try {
         const { title, author, content } = req.body;
         const blogId = req.params.id;
@@ -208,15 +271,18 @@ app.put("/api/blogs/:id", async (req, res) => {
             });
         }
 
-        const updatedBlog = await Blog.findByIdAndUpdate(
-            blogId,
-            {
-                title: title.trim(),
-                author: author.trim(),
-                content: content.trim()
-            },
-            { new: true, runValidators: true }
-        );
+       const updatedBlog = await Blog.findOneAndUpdate(
+    {
+        _id: blogId,
+        user: req.user.id
+    },
+    {
+        title: title.trim(),
+        author: author.trim(),
+        content: content.trim()
+    },
+    { new: true, runValidators: true }
+);
 
         if (!updatedBlog) {
             return res.status(404).json({
@@ -237,7 +303,7 @@ app.put("/api/blogs/:id", async (req, res) => {
     }
 });
 // Delete Blog API
-app.delete("/api/blogs/:id", async (req, res) => {
+app.delete("/api/blogs/:id", verifyToken, async (req, res) => {
     try {
         const blogId = req.params.id;
 
@@ -247,7 +313,10 @@ app.delete("/api/blogs/:id", async (req, res) => {
             });
         }
 
-        const deletedBlog = await Blog.findByIdAndDelete(blogId);
+       const deletedBlog = await Blog.findOneAndDelete({
+    _id: blogId,
+    user: req.user.id
+});
 
         if (!deletedBlog) {
             return res.status(404).json({

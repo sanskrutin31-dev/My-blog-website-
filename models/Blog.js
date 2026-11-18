@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 const blogSchema = new mongoose.Schema({
@@ -12,6 +13,11 @@ const blogSchema = new mongoose.Schema({
     },
     content: {
         type: String,
+        required: true
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
         required: true
     }
 }, {

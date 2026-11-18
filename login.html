@@ -11,96 +11,106 @@
 
 <body>
 
-<header>
-    <h2>MyBlog</h2>
+    <header>
+        <h2>MyBlog</h2>
 
-    <nav>
-        <a href="index.html">Home</a>
-        <a href="register.html">Register</a>
-    </nav>
-</header>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="register.html">Register</a>
+        </nav>
+    </header>
 
-<section class="create-section">
+    <section class="create-section">
 
-    <h1>Welcome Back!</h1>
-    <p>Login to your MyBlog account.</p>
+        <h1>Welcome Back!</h1>
+        <p>Login to your MyBlog account.</p>
 
-    <form id="loginForm">
+        <form id="loginForm">
 
-        <label>Email Address</label>
-        <input type="email" id="email"
-        placeholder="Enter your email" required>
+            <label>Email Address</label>
+            <input
+                type="email"
+                id="email"
+                placeholder="Enter your email"
+                required
+            >
 
-        <label>Password</label>
-        <input type="password" id="password"
-        placeholder="Enter your password" required>
+            <label>Password</label>
+            <input
+                type="password"
+                id="password"
+                placeholder="Enter your password"
+                required
+            >
 
-        <button type="submit">Login</button>
+            <button type="submit">Login</button>
 
-    </form>
+        </form>
 
-    <p>Don't have an account?
-        <a href="register.html">Register Here</a>
-    </p>
+        <p>
+            Don't have an account?
+            <a href="register.html">Register Here</a>
+        </p>
 
-</section>
+    </section>
 
-<script>
+    <script>
 
-document.getElementById("loginForm")
-.addEventListener("submit", async function(e) {
+        document.getElementById("loginForm")
+        .addEventListener("submit", async function(e) {
 
-    e.preventDefault();
+            e.preventDefault();
 
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
 
-    try {
+            try {
 
-        const response = await fetch("http://localhost:5000/api/login", {
+                const response = await fetch(
+                    "http://localhost:5000/api/login",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            email: email,
+                            password: password
+                        })
+                    }
+                );
 
-            method: "POST",
+                const data = await response.json();
 
-            headers: {
-                "Content-Type": "application/json"
-            },
+                if (response.ok) {
 
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
+                    localStorage.setItem("jwtToken", data.token);
+
+                    localStorage.setItem(
+                        "loggedInUser",
+                        JSON.stringify(data.user)
+                    );
+
+                    alert("Login Successful! Welcome " + data.user.name);
+
+                    window.location.href = "dashboard.html";
+
+                } else {
+
+                    alert(data.message);
+
+                }
+
+            } catch (error) {
+
+                alert("Server connection failed!");
+                console.error(error);
+
+            }
 
         });
 
-        const data = await response.json();
-
-        if (response.ok) {
-
-            localStorage.setItem(
-                "loggedInUser",
-                JSON.stringify(data.user)
-            );
-
-            alert("Login Successful! Welcome " + data.user.name);
-
-            window.location.href = "index.html";
-
-        } else {
-
-            alert(data.message);
-
-        }
-
-    } catch (error) {
-
-        alert("Server connection failed!");
-        console.error(error);
-
-    }
-
-});
-
-</script>
+    </script>
 
 </body>
 </html>
